@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkyBook Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <style>
+    body { background: #1a1d23; color: #e0e0e0; }
+    .navbar { background: #12151b !important; }
+    .card  { background: #22262f; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.4); color: #e0e0e0; }
+    .form-control, .form-select { background: #2c313a; border-color: #3a3f4a; color: #e0e0e0; }
+    .form-control:focus { background: #2c313a; color: #e0e0e0; border-color: #0d6efd; box-shadow: none; }
+    .table { color: #e0e0e0; }
+    .table-dark-custom td, .table-dark-custom th { border-color: #3a3f4a; }
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; }
+    .nav-tabs .nav-link { color: #aaa; }
+    .nav-tabs .nav-link.active { color: #fff; background: #2c313a; border-color: #3a3f4a #3a3f4a #2c313a; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark px-3" id="navbar" style="display:none">
+  <span class="navbar-brand fw-bold"><i class="bi bi-shield-lock-fill text-warning"></i> SkyBook Admin</span>
+  <div class="d-flex align-items-center gap-3">
+    <span class="text-warning small" id="nav-username"></span>
+    <button class="btn btn-outline-warning btn-sm" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+  </div>
+</nav>
+
+<!-- Auth screen -->
+<div id="auth-screen" class="d-flex align-items-center justify-content-center min-vh-100">
+  <div class="card p-4" style="width:380px">
+    <h4 class="text-center mb-1"><i class="bi bi-shield-lock-fill text-warning"></i> Admin Panel</h4>
+    <p class="text-center text-muted small mb-3">Restricted access</p>
+    <ul class="nav nav-tabs mb-3" id="authTabs">
+      <li class="nav-item"><button class="nav-link active" onclick="showAuthTab('login')">Login</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showAuthTab('register')">Register admin</button></li>
+    </ul>
+
+    <div id="tab-login">
+      <div class="mb-3"><label class="form-label">Username</label>
+        <input type="text" id="login-username" class="form-control" placeholder="admin username"/></div>
+      <div class="mb-3"><label class="form-label">Password</label>
+        <input type="password" id="login-password" class="form-control" placeholder="••••••••"/></div>
+      <button class="btn btn-warning w-100 text-dark fw-semibold" onclick="doLogin()">Login as Admin</button>
+      <div id="login-error" class="text-danger small mt-2"></div>
+    </div>
+
+    <div id="tab-register" style="display:none">
+      <div class="alert alert-warning small py-2">
+        <i class="bi bi-exclamation-triangle-fill"></i> Requires an existing admin JWT token.
+      </div>
+      <div class="mb-2"><label class="form-label">Admin token</label>
+        <input type="text" id="reg-token" class="form-control" placeholder="Bearer token of existing admin"/></div>
+      <div class="row g-2 mb-2">
+        <div class="col"><label class="form-label">First name</label>
+          <input type="text" id="reg-firstName" class="form-control"/></div>
+        <div class="col"><label class="form-label">Last name</label>
+          <input type="text" id="reg-lastName" class="form-control"/></div>
+      </div>
+      <div class="mb-2"><label class="form-label">Username</label>
+        <input type="text" id="reg-username" class="form-control"/></div>
+      <div class="mb-2"><label class="form-label">Email</label>
+        <input type="email" id="reg-email" class="form-control"/></div>
+      <div class="mb-2"><label class="form-label">Phone</label>
+        <input type="text" id="reg-phone" class="form-control"/></div>
+      <div class="mb-3"><label class="form-label">Password</label>
+        <input type="password" id="reg-password" class="form-control"/></div>
+      <button class="btn btn-warning w-100 text-dark fw-semibold" onclick="doRegister()">Create admin account</button>
+      <div id="register-error" class="text-danger small mt-2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Main admin app -->
+<div id="app" style="display:none" class="container-fluid py-4">
+  <ul class="nav nav-tabs mb-4" id="mainTabs">
+    <li class="nav-item"><button class="nav-link active" onclick="switchTab('flights')"><i class="bi bi-airplane"></i> Flights</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('bookings')"><i class="bi bi-ticket-perforated"></i> All Bookings</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('users')"><i class="bi bi-people"></i> Users</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('payments')"><i class="bi bi-credit-card"></i> Payments</button></li>
+  </ul>
+
+  <!-- FLIGHTS TAB -->
+  <div id="tab-flights">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="card p-3">
+          <h5 class="mb-3">Add Flight</h5>
+          <div class="row g-2 mb-2">
+            <div class="col"><label class="form-label small">Flight #</label>
+              <input type="text" id="f-num" class="form-control form-control-sm" placeholder="AA123"/></div>
+            <div class="col"><label class="form-label small">Price ($)</label>
+              <input type="number" id="f-price" class="form-control form-control-sm" step="0.01"/></div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col"><label class="form-label small">Origin</label>
+              <input type="text" id="f-origin" class="form-control form-control-sm"/></div>
+            <div class="col"><label class="form-label small">Destination</label>
+              <input type="text" id="f-dest" class="form-control form-control-sm"/></div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col"><label class="form-label small">Departure</label>
+              <input type="datetime-local" id="f-dep" class="form-control form-control-sm"/></div>
+            <div class="col"><label class="form-label small">Arrival</label>
+              <input type="datetime-local" id="f-arr" class="form-control form-control-sm"/></div>
+          </div>
+          <div class="mb-3"><label class="form-label small">Total seats</label>
+            <input type="number" id="f-seats" class="form-control form-control-sm" value="150"/></div>
+          <button class="btn btn-warning btn-sm text-dark w-100" onclick="addFlight()"><i class="bi bi-plus-circle"></i> Add flight</button>
+          <div id="flight-msg" class="mt-2 small"></div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">All Flights</h5>
+          <button class="btn btn-outline-secondary btn-sm" onclick="loadFlights()"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+        <div id="flights-table" class="table-responsive"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKINGS TAB -->
+  <div id="tab-bookings" style="display:none">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">All Bookings</h5>
+      <button class="btn btn-outline-secondary btn-sm" onclick="loadBookings()"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
+    <div id="bookings-table" class="table-responsive"></div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tab-users" style="display:none">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">All Users</h5>
+      <button class="btn btn-outline-secondary btn-sm" onclick="loadUsers()"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
+    <div id="users-table" class="table-responsive"></div>
+  </div>
+
+  <!-- PAYMENTS TAB -->
+  <div id="tab-payments" style="display:none">
+    <div class="mb-3">
+      <h5 class="mb-3">Refund Payment by Booking ID</h5>
+      <div class="d-flex gap-2" style="max-width:320px">
+        <input type="number" id="refund-booking-id" class="form-control" placeholder="Booking ID"/>
+        <button class="btn btn-warning text-dark" onclick="refundByBooking()">Refund</button>
+      </div>
+      <div id="refund-msg" class="mt-2 small"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const API = '/api';
+let AUTH = null;
+
+function saveAuth(d) { AUTH = d; localStorage.setItem('adminAuth', JSON.stringify(d)); }
+function loadAuth()  { const s = localStorage.getItem('adminAuth'); if (s) AUTH = JSON.parse(s); }
+function logout()    { AUTH = null; localStorage.removeItem('adminAuth'); location.reload(); }
+function headers()   { return {'Content-Type':'application/json','Authorization':`Bearer ${AUTH.token}`}; }
+
+loadAuth();
+if (AUTH) showApp(); else document.getElementById('auth-screen').style.display = '';
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  document.getElementById('navbar').style.display = '';
+  document.getElementById('nav-username').textContent = AUTH.fullName || AUTH.username;
+  loadFlights();
+}
+
+function showAuthTab(tab) {
+  document.getElementById('tab-login').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('tab-register').style.display = tab === 'register' ? '' : 'none';
+  document.querySelectorAll('#authTabs .nav-link').forEach((el,i) =>
+    el.classList.toggle('active', (i===0) === (tab==='login')));
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  document.getElementById('login-error').textContent = '';
+  const res = await fetch(`${API}/admin/login`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})
+  }).catch(() => null);
+  if (!res || !res.ok) {
+    const err = res ? await res.json().catch(()=>({})) : {};
+    document.getElementById('login-error').textContent = err.detail || 'Login failed — admin accounts only';
+    return;
+  }
+  saveAuth(await res.json());
+  showApp();
+}
+
+async function doRegister() {
+  const token = document.getElementById('reg-token').value.trim();
+  const body = {
+    username:    document.getElementById('reg-username').value.trim(),
+    firstName:   document.getElementById('reg-firstName').value.trim(),
+    lastName:    document.getElementById('reg-lastName').value.trim(),
+    email:       document.getElementById('reg-email').value.trim(),
+    phoneNumber: document.getElementById('reg-phone').value.trim(),
+    password:    document.getElementById('reg-password').value,
+  };
+  document.getElementById('register-error').textContent = '';
+  const res = await fetch(`${API}/admin/register`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+    body:JSON.stringify(body)
+  }).catch(()=>null);
+  if (!res || !res.ok) {
+    const err = res ? await res.json().catch(()=>({})) : {};
+    document.getElementById('register-error').textContent = err.detail || 'Registration failed';
+    return;
+  }
+  toast('Admin account created! You can now log in.', 'success');
+  showAuthTab('login');
+}
+
+function switchTab(name) {
+  ['flights','bookings','users','payments'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('#mainTabs .nav-link').forEach((el,i) => {
+    el.classList.toggle('active', ['flights','bookings','users','payments'][i]===name);
+  });
+  if (name==='flights')  loadFlights();
+  if (name==='bookings') loadBookings();
+  if (name==='users')    loadUsers();
+}
+
+// ── Flights ───────────────────────────────────────────────────────────────────
+async function loadFlights() {
+  const res = await fetch(`${API}/flights`, {headers:headers()});
+  const data = await res.json().catch(()=>[]);
+  const rows = Array.isArray(data) ? data : [];
+  document.getElementById('flights-table').innerHTML = rows.length ? `
+    <table class="table table-sm table-dark-custom">
+      <thead><tr><th>#</th><th>Route</th><th>Departure</th><th>Price</th><th>Seats</th></tr></thead>
+      <tbody>${rows.map(f=>`
+        <tr>
+          <td>${f.flightNumber}</td>
+          <td>${f.origin} → ${f.destination}</td>
+          <td>${fmtDt(f.departureTime)}</td>
+          <td>$${f.price}</td>
+          <td>${f.availableSeats}/${f.totalSeats}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="text-muted">No flights.</p>';
+}
+
+async function addFlight() {
+  const body = {
+    flightNumber: document.getElementById('f-num').value.trim(),
+    origin:       document.getElementById('f-origin').value.trim(),
+    destination:  document.getElementById('f-dest').value.trim(),
+    departureTime:document.getElementById('f-dep').value,
+    arrivalTime:  document.getElementById('f-arr').value,
+    price:        parseFloat(document.getElementById('f-price').value),
+    totalSeats:   parseInt(document.getElementById('f-seats').value),
+  };
+  const res = await fetch(`${API}/flights`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+  const msg = document.getElementById('flight-msg');
+  if (res.ok) {
+    msg.className='text-success small'; msg.textContent='Flight added!';
+    loadFlights();
+  } else {
+    const err = await res.json().catch(()=>({}));
+    msg.className='text-danger small'; msg.textContent=err.detail||'Failed';
+  }
+}
+
+// ── Bookings ──────────────────────────────────────────────────────────────────
+async function loadBookings() {
+  const res = await fetch(`${API}/bookings`, {headers:headers()});
+  const data = await res.json().catch(()=>[]);
+  const rows = Array.isArray(data) ? data : [];
+  document.getElementById('bookings-table').innerHTML = rows.length ? `
+    <table class="table table-sm table-dark-custom">
+      <thead><tr><th>ID</th><th>User</th><th>Flight</th><th>Pax</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${rows.map(b=>`
+        <tr>
+          <td>${b.id}</td>
+          <td>${b.userId}</td>
+          <td>${b.flightNumber||b.flightId}</td>
+          <td>${b.numberOfPassengers}</td>
+          <td>$${b.totalPrice}</td>
+          <td><span class="badge bg-${statusColor(b.status)}">${b.status}</span></td>
+          <td>${b.status==='PENDING'||b.status==='CONFIRMED' ? `<button class="btn btn-outline-danger btn-sm" onclick="adminCancel(${b.id})">Cancel</button>` : ''}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="text-muted">No bookings.</p>';
+}
+
+async function adminCancel(id) {
+  if (!confirm('Cancel booking #'+id+'?')) return;
+  const res = await fetch(`${API}/bookings/${id}/cancel`, {method:'PUT',headers:headers()});
+  if (res.ok) { toast('Booking cancelled','info'); loadBookings(); }
+  else toast('Failed','danger');
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const res = await fetch(`${API}/users`, {headers:headers()});
+  const data = await res.json().catch(()=>[]);
+  const rows = Array.isArray(data) ? data : [];
+  document.getElementById('users-table').innerHTML = rows.length ? `
+    <table class="table table-sm table-dark-custom">
+      <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+      <tbody>${rows.map(u=>`
+        <tr>
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.firstName} ${u.lastName}</td>
+          <td>${u.email}</td>
+          <td><span class="badge ${u.role==='ADMIN'?'bg-warning text-dark':'bg-secondary'}">${u.role}</span></td>
+          <td>${u.role!=='ADMIN'?`<button class="btn btn-outline-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')"><i class="bi bi-trash"></i></button>`:'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="text-muted">No users.</p>';
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Delete user "${username}"? This also deletes their bookings and payments.`)) return;
+  const res = await fetch(`${API}/users/${id}`, {method:'DELETE',headers:headers()});
+  if (res.ok || res.status===204) { toast('User deleted','success'); loadUsers(); }
+  else { const e = await res.json().catch(()=>({})); toast(e.detail||'Delete failed','danger'); }
+}
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+async function refundByBooking() {
+  const bookingId = document.getElementById('refund-booking-id').value;
+  const msg = document.getElementById('refund-msg');
+  if (!bookingId) { msg.className='text-danger small'; msg.textContent='Enter a booking ID'; return; }
+  const payRes = await fetch(`${API}/payments/booking/${bookingId}`, {headers:headers()});
+  if (!payRes.ok) { msg.className='text-danger small'; msg.textContent='Payment not found for that booking'; return; }
+  const payment = await payRes.json();
+  const res = await fetch(`${API}/payments/${payment.id}/refund`, {method:'PUT',headers:headers()});
+  if (res.ok) { msg.className='text-success small'; msg.textContent='Refund processed!'; }
+  else { const e = await res.json().catch(()=>({})); msg.className='text-danger small'; msg.textContent=e.detail||'Refund failed'; }
+}
+
+function statusColor(s) {
+  return {CONFIRMED:'success',PENDING:'warning',CANCELLED:'danger',COMPLETED:'success',REFUNDED:'secondary'}[s]||'secondary';
+}
+
+function fmtDt(s) {
+  if (!s) return '';
+  return new Date(s).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function toast(msg, type='info') {
+  const id='toast-'+Date.now();
+  const colors={success:'bg-success',danger:'bg-danger',warning:'bg-warning text-dark',info:'bg-info text-dark'};
+  const el=document.createElement('div');
+  el.id=id;
+  el.className=`toast align-items-center text-white ${colors[type]||'bg-secondary'} border-0 show mb-2`;
+  el.setAttribute('role','alert');
+  el.innerHTML=`<div class="d-flex"><div class="toast-body">${msg}</div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${id}').remove()"></button></div>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+</script>
+</body>
+</html>
