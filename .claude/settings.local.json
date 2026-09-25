@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile *)",
+      "Bash(java --version)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/**)",
+      "Bash(curl -s -X POST http://localhost:8080/api/users -H 'Content-Type: application/json' -d '{\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john.doe@example.com\",\"phoneNumber\":\"+1234567890\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(pkill -f \"spring-boot:run\")",
+      "Bash(chmod +x *)",
+      "Bash(curl -s http://localhost:8080/api/flights)",
+      "Bash(curl -s http://localhost:8080/api/users)",
+      "Bash(curl -s http://localhost:8080/api/bookings)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)",
+      "Bash(open *)",
+      "Bash(curl -s -X POST http://localhost:8080/api/payments -H 'Content-Type: application/json' -d '{\"bookingId\":2}')",
+      "Bash(curl -s http://localhost:8080/api/bookings/2)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/h2-console)",
+      "Bash(curl -s http://localhost:8080/h2-console/)",
+      "Bash(\"/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn\" spring-boot:run)",
+      "Bash(echo \"PID: $!\")"
+    ]
+  }
+}
