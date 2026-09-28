@@ -35,11 +35,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // ── Public ───────────────────────────────────────────────
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/", "/index.html", "/admin.html", "/dashboard.html", "/favicon.ico").permitAll()
                 // ── Admin-only area ──────────────────────────────────────
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,    "/api/users").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST,   "/api/users").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")

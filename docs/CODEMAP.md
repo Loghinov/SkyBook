@@ -101,11 +101,12 @@ JWT, authentication, and security configuration.
 - SecurityUtils.java
 - UserDetailsServiceImpl.java
 
-##### src/main/java/com/flightbooking/service/ (8 files)
+##### src/main/java/com/flightbooking/service/ (9 files)
 Business logic interfaces and implementations.
 
-###### src/main/java/com/flightbooking/service/ (4 files)
+###### src/main/java/com/flightbooking/service/ (5 files)
 Service interfaces.
+- AmadeusService.java
 - BookingService.java
 - FlightService.java
 - PaymentService.java

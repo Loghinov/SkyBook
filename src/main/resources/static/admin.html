@@ -35,11 +35,6 @@
   <div class="card p-4" style="width:380px">
     <h4 class="text-center mb-1"><i class="bi bi-shield-lock-fill text-warning"></i> Admin Panel</h4>
     <p class="text-center text-muted small mb-3">Restricted access</p>
-    <ul class="nav nav-tabs mb-3" id="authTabs">
-      <li class="nav-item"><button class="nav-link active" onclick="showAuthTab('login')">Login</button></li>
-      <li class="nav-item"><button class="nav-link" onclick="showAuthTab('register')">Register admin</button></li>
-    </ul>
-
     <div id="tab-login">
       <div class="mb-3"><label class="form-label">Username</label>
         <input type="text" id="login-username" class="form-control" placeholder="admin username"/></div>
@@ -47,30 +42,6 @@
         <input type="password" id="login-password" class="form-control" placeholder="••••••••"/></div>
       <button class="btn btn-warning w-100 text-dark fw-semibold" onclick="doLogin()">Login as Admin</button>
       <div id="login-error" class="text-danger small mt-2"></div>
-    </div>
-
-    <div id="tab-register" style="display:none">
-      <div class="alert alert-warning small py-2">
-        <i class="bi bi-exclamation-triangle-fill"></i> Requires an existing admin JWT token.
-      </div>
-      <div class="mb-2"><label class="form-label">Admin token</label>
-        <input type="text" id="reg-token" class="form-control" placeholder="Bearer token of existing admin"/></div>
-      <div class="row g-2 mb-2">
-        <div class="col"><label class="form-label">First name</label>
-          <input type="text" id="reg-firstName" class="form-control"/></div>
-        <div class="col"><label class="form-label">Last name</label>
-          <input type="text" id="reg-lastName" class="form-control"/></div>
-      </div>
-      <div class="mb-2"><label class="form-label">Username</label>
-        <input type="text" id="reg-username" class="form-control"/></div>
-      <div class="mb-2"><label class="form-label">Email</label>
-        <input type="email" id="reg-email" class="form-control"/></div>
-      <div class="mb-2"><label class="form-label">Phone</label>
-        <input type="text" id="reg-phone" class="form-control"/></div>
-      <div class="mb-3"><label class="form-label">Password</label>
-        <input type="password" id="reg-password" class="form-control"/></div>
-      <button class="btn btn-warning w-100 text-dark fw-semibold" onclick="doRegister()">Create admin account</button>
-      <div id="register-error" class="text-danger small mt-2"></div>
     </div>
   </div>
 </div>
@@ -178,18 +149,11 @@ function showApp() {
   loadFlights();
 }
 
-function showAuthTab(tab) {
-  document.getElementById('tab-login').style.display    = tab === 'login'    ? '' : 'none';
-  document.getElementById('tab-register').style.display = tab === 'register' ? '' : 'none';
-  document.querySelectorAll('#authTabs .nav-link').forEach((el,i) =>
-    el.classList.toggle('active', (i===0) === (tab==='login')));
-}
-
 async function doLogin() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   document.getElementById('login-error').textContent = '';
-  const res = await fetch(`${API}/admin/login`, {
+  const res = await fetch(`${API}/auth/login`, {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})
   }).catch(() => null);
   if (!res || !res.ok) {
@@ -197,33 +161,13 @@ async function doLogin() {
     document.getElementById('login-error').textContent = err.detail || 'Login failed — admin accounts only';
     return;
   }
-  saveAuth(await res.json());
-  showApp();
-}
-
-async function doRegister() {
-  const token = document.getElementById('reg-token').value.trim();
-  const body = {
-    username:    document.getElementById('reg-username').value.trim(),
-    firstName:   document.getElementById('reg-firstName').value.trim(),
-    lastName:    document.getElementById('reg-lastName').value.trim(),
-    email:       document.getElementById('reg-email').value.trim(),
-    phoneNumber: document.getElementById('reg-phone').value.trim(),
-    password:    document.getElementById('reg-password').value,
-  };
-  document.getElementById('register-error').textContent = '';
-  const res = await fetch(`${API}/admin/register`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-    body:JSON.stringify(body)
-  }).catch(()=>null);
-  if (!res || !res.ok) {
-    const err = res ? await res.json().catch(()=>({})) : {};
-    document.getElementById('register-error').textContent = err.detail || 'Registration failed';
+  const data = await res.json();
+  if (data.role !== 'ADMIN') {
+    document.getElementById('login-error').textContent = 'Access denied — admin accounts only';
     return;
   }
-  toast('Admin account created! You can now log in.', 'success');
-  showAuthTab('login');
+  saveAuth(data);
+  showApp();
 }
 
 function switchTab(name) {
