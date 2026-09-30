@@ -1,0 +1,39 @@
+# Build output
+target/
+
+# Version control
+.git/
+.gitignore
+.github/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Docs and project meta
+docs/
+agents/
+refsrc/
+plans/
+*.md
+gain.json
+
+# Secrets and local config
+.env
+.env.example
+.prettierignore
+
+# Docker files (not needed inside build context)
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Nginx artifacts (not needed by app container)
+nginx/
+
+# Claude / tooling
+.claude/

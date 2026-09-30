@@ -39,3 +39,7 @@ build/
 agents/TEMP/
 refsrc/
 !refsrc/INDEX.md
+
+# Secrets
+.env
+nginx/certs/

@@ -1,65 +1,87 @@
 # Flight Booking System
 
-A Spring Boot 3.3.0 / Java 21 demo application for searching and booking flights, with JWT-based authentication and role-based access control.
+A Spring Boot 3.3.0 / Java 21 demo application for searching and booking flights, with JWT-based authentication and role-based access control. Runs locally via Docker Compose (PostgreSQL + Spring Boot + nginx with HTTPS).
 
 ## Quick Start
 
 ### Prerequisites
-- Java 21+
-- Maven 3.8+
+- Docker
+- Docker Compose
 
-### Run
+### First-time setup
+
 ```bash
-mvn spring-boot:run
+# 1. Copy environment template and fill in real values
+cp .env.example .env
+
+# 2. Generate self-signed SSL certificate for local HTTPS
+sh nginx/generate-certs.sh
+
+# 3. Build and start all services
+docker compose up --build
 ```
 
-The application starts on `http://localhost:8080`.
+Application is available at **https://localhost**.
 
-### Access
-- **Frontend SPA**: http://localhost:8080/index.html
-- **H2 Console** (dev only): http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:mem:flightdb` (or as configured in `application.properties`)
-  - Username: `sa`, Password: *(empty)*
+> The browser will show a "Your connection is not private" warning — this is expected for self-signed certificates. Accept and proceed.
+
+### Everyday commands
+
+```bash
+docker compose up          # start (no rebuild)
+docker compose up --build  # rebuild after code changes
+docker compose down        # stop and remove containers
+docker compose down -v     # stop + delete Postgres data
+```
 
 ## Test Credentials
 
-| Username | Password | Role |
-|---|---|---|
-| `admin` | `admin` | ADMIN |
-| `alice` | `password123` | USER |
-| `bob` | `password123` | USER |
-| `carol` | `password123` | USER |
+| Username | Password    | Role  |
+|----------|-------------|-------|
+| `admin`  | `admin1`    | ADMIN |
+| `alice`  | `pass1word` | USER  |
+| `bob`    | `pass1word` | USER  |
+| `carol`  | `pass1word` | USER  |
 
-All accounts and seed data are created by `DataInitializer` on startup. Data is reset on every restart (H2 in-memory).
+Seed data is inserted by `DataInitializer` on first startup. Postgres data persists across restarts (in a Docker volume).
+
+## Running tests
+
+Unit tests (Mockito-based, no database required):
+```bash
+mvn test
+```
+
+Tests also run automatically in GitHub Actions on push and pull request.
 
 ## API Overview
 
 Base path: `/api`
 
-| Area | Endpoints |
-|---|---|
-| Auth | POST /auth/login, POST /auth/register, GET /auth/me, PUT /auth/profile |
-| Flights | GET/POST /flights, GET/DELETE /flights/{id}, POST/GET /flights/search |
-| Bookings | POST /bookings, GET /bookings/{id}, GET /bookings/user/{userId}, PUT /bookings/{id}/cancel, GET /bookings (admin) |
-| Payments | PUT /payments/{id}/refund (admin) |
+| Area     | Endpoints                                                                                                            |
+|----------|----------------------------------------------------------------------------------------------------------------------|
+| Auth     | POST /auth/login, POST /auth/register, GET /auth/me, PUT /auth/profile                                               |
+| Flights  | GET/POST /flights, GET/DELETE /flights/{id}, POST/GET /flights/search                                                |
+| Bookings | POST /bookings, GET /bookings/{id}, GET /bookings/user/{userId}, PUT /bookings/{id}/cancel, GET /bookings (admin)    |
+| Payments | PUT /payments/{id}/refund (admin)                                                                                    |
 
 All protected endpoints require `Authorization: Bearer <token>` header.
 
 ## Documentation
 
-| Doc | Description |
-|---|---|
-| `docs/CONTEXT.md` | Business context, rules, stakeholders |
-| `docs/ARCHITECTURE.md` | Technical layers, API surface, security model |
-| `docs/CODEMAP.md` | File structure and package map |
-| `docs/TECHSTACK.md` | Technology stack details |
-| `docs/DEPENDENCIES.md` | Maven dependency inventory |
-| `docs/ASSUMPTIONS.md` | Open assumptions from analysis |
-| `docs/TODO.md` | Prioritized improvement backlog |
-| `docs/PATTERNS/INDEX.md` | Code patterns and conventions |
-| `agents/IMPLEMENTATION.md` | Current implementation state summary |
+| Doc                          | Description                                        |
+|------------------------------|----------------------------------------------------|
+| `docs/CONTEXT.md`            | Business context, rules, stakeholders              |
+| `docs/ARCHITECTURE.md`       | Technical layers, API surface, security model      |
+| `docs/CODEMAP.md`            | File structure and package map                     |
+| `docs/TECHSTACK.md`          | Technology stack details                           |
+| `docs/DEPENDENCIES.md`       | Maven dependency inventory                         |
+| `docs/ASSUMPTIONS.md`        | Open assumptions from analysis                     |
+| `docs/TODO.md`               | Prioritized improvement backlog                    |
+| `docs/PATTERNS/INDEX.md`     | Code patterns and conventions                      |
+| `agents/IMPLEMENTATION.md`   | Current implementation state summary               |
 
 ## Notes
-- This is a demo application. H2 in-memory database resets on every restart.
-- H2 console and default credentials are not suitable for production deployment.
-- See `docs/TODO.md` for production-readiness items.
+- Demo / learning project — not production-hardened.
+- Self-signed certificates are local-only; use Let's Encrypt or similar for public deployment.
+- See `docs/TODO.md` for the roadmap of hardening items.
